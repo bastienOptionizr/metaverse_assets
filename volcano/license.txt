@@ -1,11 +1,11 @@
 Model Information:
-* title:	Volcan Osorno 3D - Chile
-* source:	https://sketchfab.com/3d-models/volcan-osorno-3d-chile-675791cfd6e342828927b0bcdafa496b
-* author:	robertonappe (https://sketchfab.com/robertonappe)
+* title:	( FREE ) Volcano Low poly
+* source:	https://sketchfab.com/3d-models/free-volcano-low-poly-516e0bd4e78d4f5caed3f00f056e2e3a
+* author:	SDC PERFORMANCE™️ (https://sketchfab.com/3Duae)
 
 Model License:
 * license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
 * requirements:	Author must be credited. Commercial use is allowed.
 
 If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
-This work is based on "Volcan Osorno 3D - Chile" (https://sketchfab.com/3d-models/volcan-osorno-3d-chile-675791cfd6e342828927b0bcdafa496b) by robertonappe (https://sketchfab.com/robertonappe) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+This work is based on "( FREE ) Volcano Low poly" (https://sketchfab.com/3d-models/free-volcano-low-poly-516e0bd4e78d4f5caed3f00f056e2e3a) by SDC PERFORMANCE™️ (https://sketchfab.com/3Duae) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
