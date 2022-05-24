@@ -113,23 +113,20 @@
 
         function set_camera(scene)
         {
+        	var camera = new BABYLON.ArcRotateCamera("Camera", (Math.PI), (-Math.PI/2) , 5, BABYLON.Vector3.Zero(), scene);
 
-        	var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
-		// Targets the camera to a particular position. In this case the scene origin
-		// camera.setTarget(BABYLON.Vector3(0,5,0));
+		camera.lowerRadiusLimit = 6;
+		camera.upperRadiusLimit = 20;
+		// camera.lowerBetaLimit = (-Math.PI/4);
+		// camera.upperBetaLimit = (Math.PI/8);
 
-		// Attach the camera to the canvas
-		// camera.attachControl(canvas, true);
-		// camera.upperBetaLimit = Math.PI / 2.2;
+		camera.useBouncingBehavior = true;
+        	
+        	//restrict zoom
+        	camera.lowerRadiusLimit = camera.upperRadiusLimit = camera.radius;
 
-		// camera.lowerAlphaLimit = Math.PI;
-		// camera.upperAlphaLimit = Math.PI * 2;
+	    	// camera.applyVerticalCorrection()
 
-		// camera.lowerRadiusLimit = 1;
-		// camera.upperRadiusLimit = 1;
-		// camera.radius = 1;
-
-		// camera.lowerRadiusLimit = camera.upperRadiusLimit = camera.radius = 1;
 		camera.attachControl(canvas, true);
 		// handle_collision_camera(camera, scene);
         }
