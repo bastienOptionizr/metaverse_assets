@@ -88,6 +88,8 @@
 			    console.log(message, exception);
 			}
 
+			click_airport(scene);
+
 			assetsManager.load();
 
 		    return scene;
@@ -113,22 +115,14 @@
 
         function set_camera(scene)
         {
-        	var camera = new BABYLON.ArcRotateCamera("Camera", (Math.PI), (-Math.PI/2) , 5, BABYLON.Vector3.Zero(), scene);
+        	camera = new BABYLON.UniversalCamera("FreeCamera", new BABYLON.Vector3(0, 0.5, 0), scene);
+        	camera.applyGravity = true
+	        camera.speed = 0.5;
 
-		camera.lowerRadiusLimit = 6;
-		camera.upperRadiusLimit = 20;
-		// camera.lowerBetaLimit = (-Math.PI/4);
-		// camera.upperBetaLimit = (Math.PI/8);
+	        camera.attachControl(canvas);
+	        scene.registerBeforeRender(function () {    camera.rotation.x = 0;})
 
-		camera.useBouncingBehavior = true;
-        	
-        	//restrict zoom
-        	camera.lowerRadiusLimit = camera.upperRadiusLimit = camera.radius;
-
-	    	// camera.applyVerticalCorrection()
-
-		camera.attachControl(canvas, true);
-		// handle_collision_camera(camera, scene);
+	        // scene.registerBeforeRender(beforeRenderFunction);
         }
 
 
@@ -140,6 +134,31 @@
         	camera.checkCollisions = true;
         }
 
+
+        function click_airport(scene)
+        {
+		// On pick interpolations
+	    var prepareButton = function (mesh, color, light) {
+	        var goToColorAction = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPickTrigger, light, "diffuse", color, 1000, null, true);
+
+	        mesh.actionManager = new BABYLON.ActionManager(scene);
+	        mesh.actionManager.registerAction(
+	            new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPickTrigger, light, "diffuse", BABYLON.Color3.Black(), 1000))
+	            .then(new BABYLON.CombineAction(BABYLON.ActionManager.NothingTrigger, [ // Then is used to add a child action used alternatively with the root action. 
+	                goToColorAction,                                                 // First click: root action. Second click: child action. Third click: going back to root action and so on...   
+	                new BABYLON.SetValueAction(BABYLON.ActionManager.NothingTrigger, mesh.material, "wireframe", false)
+	            ]));
+	        mesh.actionManager.registerAction(new BABYLON.SetValueAction(BABYLON.ActionManager.OnPickTrigger, mesh.material, "wireframe", true))
+	            .then(new BABYLON.DoNothingAction());
+	        mesh.actionManager.registerAction(new BABYLON.SetStateAction(BABYLON.ActionManager.OnPickTrigger, light, "off"))
+	            .then(new BABYLON.SetStateAction(BABYLON.ActionManager.OnPickTrigger, light, "on"));
+	    }
+
+	    prepareButton(redBox, BABYLON.Color3.Red(), light1);
+	    prepareButton(greenBox, BABYLON.Color3.Green(), light2);
+	    prepareButton(blueBox, BABYLON.Color3.Blue(), light3);
+
+        }
         function optimize(scene)
         {
         }	
