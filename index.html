@@ -37,7 +37,8 @@
  
 	<script>
 		const createScene = function () {
-	 
+	 		var plane = null;
+
 			const scene = new BABYLON.Scene(engine);
 			// scene.useRightHandedSystem = true;
 			// scene.blockMaterialDirtyMechanism = true;
@@ -50,11 +51,14 @@
 
 			build_sky(scene);
 
+
 			var planeTask = assetsManager.addMeshTask("plane task", "", "./plane/", "plane.glb");
 			planeTask.onSuccess = function (task) {
-				var plane = task.loadedMeshes[0];
+				plane = task.loadedMeshes[0];
 				// plane.checkCollisions = true; 
-				plane.position.y = 10;
+				plane.position.y = 3;
+				plane.position.x = 10;
+				plane_animation(scene, plane);
 			}
 			planeTask.onError = function (task, message, exception) {
 			    console.log(message, exception);
@@ -71,7 +75,7 @@
 				volcano.position.z = -60;
 
 				// Create an eruption
-			    	// build_eruption_volcano(scene)
+			    	build_eruption_volcano(scene)
 			}
 
 			volcanoTask.onError = function (task, message, exception) {
@@ -89,6 +93,7 @@
 			}
 
 			click_airport(scene, camera);
+			
 
 			assetsManager.load();
 
@@ -115,19 +120,20 @@
 
         function set_camera(scene)
         {
+
         	camera = new BABYLON.UniversalCamera("FreeCamera", new BABYLON.Vector3(0, 0.5, 0), scene);
         	camera.applyGravity = true
 	        camera.speed = 0.5;
+	        camera.cameraDirection = (new BABYLON.Vector3(0, 0, -1));
 
 	        camera.attachControl(canvas);
 	        scene.registerBeforeRender(function () {    camera.rotation.x = 0;})
 
 	        return camera;
-
-	        // scene.registerBeforeRender(beforeRenderFunction);
         }
 
 
+        /*
         function handle_collision_camera(camera , scene)
         {
 		camera.ellipsoid = new BABYLON.Vector3(1, 1, 1);
@@ -135,6 +141,7 @@
         	scene.collisionsEnabled = true;
         	camera.checkCollisions = true;
         }
+        */
 
 
         function click_airport(scene, camera)
@@ -145,6 +152,7 @@
         		new BABYLON.Color4(0.85, 0.16, 0.12),
         		new BABYLON.Color4(0.85, 0.16, 0.12),
         	]
+
 		//add transparent box to handle click
 		const box = BABYLON.MeshBuilder.CreateBox("box", { height: 0.5, width: 1, depth: 0.5, faceColors: colors});
 		box.position.x = 1.8;
@@ -168,7 +176,7 @@
 
 		prepareButton(box);
 
-        }	
+        }
 
         function build_eruption_volcano(scene)
         {
@@ -255,25 +263,7 @@
 	        plane.animations = [];
 	        plane.animations.push(animPlaneZ);
 
-	        const animPlaneY = new BABYLON.Animation("planeYAnimation", "position.y", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
-
-	        const planeYKeys = []; 
-	        var init_y = 10
-	        var frame = 0;
-	        var avancement_y = -1;
-
-	        for (var i = 0; i <10; i++){
-	            planeYKeys.push({
-	                frame: frame,
-	                value: init_z
-	            });
-	            frame = frame + 50;
-	            init_y = init_y + avancement_y;
-	        }
-
-	        animPlaneY.setKeys(planeYKeys);
-
-	        plane.animations.push(animPlaneY);
+	        
 
 
 	        scene.beginAnimation(plane, 0, 300, true);
