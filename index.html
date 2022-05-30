@@ -1,238 +1,501 @@
-
-
 <html>
+
 <head>
-	<script src="https://cdn.babylonjs.com/babylon.js"></script>
+	<style>
+	#fps {
+		position: absolute;
+		background-color: black;
+		border: 2px solid red;
+		text-align: center;
+		font-size: 16px;
+		color: white;
+		top: 15px;
+		right: 10px;
+		width: 60px;
+		height: 20px;
+	}
+	</style>
+	<script src="babylon.js"></script>
 	<script src="https://cdn.babylonjs.com/babylon.objFileLoader.js"></script>
-	<script src="https://cdn.babylonjs.com/babylon.max.js"></script>
- 
-	<script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
-	<script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.js"></script>
- 
-	<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-	<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
- 
-	<script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
-	<script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.js"></script>
- 
-	<script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
-	<script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.js"></script>
- 
-	<script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
-	<script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.js"></script>
- 
-	<script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
-	<script src="https://cdn.babylonjs.com/gui/babylon.gui.js"></script>
- 
-	<script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
-	<script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.max.js"></script>
- 
-	<script src="https://cdn.babylonjs.com/viewer/babylon.viewer.js"></script>  
-	<script src="https://cdn.babylonjs.com/viewer/babylon.viewer.max.js"></script>
+	<script src="babylon.max.js"></script>
+	<script src="babylonjs.materials.min.js"></script>
+	<!-- <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.js"></script> -->
+	<script src="babylonjs.loaders.min.js"></script>
+	<script src="babylonjs.loaders.js"></script>
+	<script src="babylonjs.postProcess.min.js"></script>
+	<script src="babylonjs.postProcess.js"></script>
+	<script src="babylonjs.proceduralTextures.min.js"></script>
+	<script src="babylonjs.proceduralTextures.js"></script>
+	<script src="babylonjs.serializers.min.js"></script>
+	<script src="serializers/babylonjs.serializers.js"></script>
+	<script src="babylon.gui.min.js"></script>
+	<script src="babylon.gui.js"></script>
+	<script src="babylon.inspector.bundle.js"></script>
+	<script src="babylon.inspector.bundle.max.js"></script>
+	<script src="babylon.viewer.js"></script>
+	<script src="babylon.viewer.max.js"></script>
 </head>
+
 <body>
- 
- 
 	<canvas id="renderCanvas" style="width:800px; height: 600px;" touch-action="none"></canvas> <!-- touch-action="none" for best results from PEP -->
- 
+	<div id="fps">0</div>
 	<script>
-		const createScene = function () {
+	const createScene = function() {
 
-			alert("find your way to the reunion airport ! (red box)Move with the direction keys and your mouse to orient the camera ");
+		alert("find your way to the reunion airport ! (red box)Move with the direction keys and your mouse to orient the camera ");
 
-	 		var plane = null;
+		var plane = null;
 
-			const scene = new BABYLON.Scene(engine);
-			// scene.useRightHandedSystem = true;
-			// scene.blockMaterialDirtyMechanism = true;
+		const scene = new BABYLON.Scene(engine);
+		scene.useRightHandedSystem = true;
+		// scene.blockMaterialDirtyMechanism = true;
 
-			var assetsManager = new BABYLON.AssetsManager(scene);
-			
-			var camera = set_camera(scene);
+		var assetsManager = new BABYLON.AssetsManager(scene);
+		//use old_camera to disable gravity
+		var camera = set_collision_camera(scene);
 
-			const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
+		const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
 
-			build_sky(scene);
+		build_sky(scene);
+
+		// build_ground(scene);
 
 
-			var planeTask = assetsManager.addMeshTask("plane task", "", "./plane/", "plane.glb");
-			planeTask.onSuccess = function (task) {
-				plane = task.loadedMeshes[0];
-				// plane.checkCollisions = true; 
-				plane.position.y = 3;
-				plane.position.x = 10;
-				plane_animation(scene, plane);
+		var planeTask = assetsManager.addMeshTask("plane task", "", "./plane/", "plane.glb");
+		planeTask.onSuccess = function(task) {
+			plane = task.loadedMeshes[0];
+			// plane.checkCollisions = true; 
+			plane.position.y = 3;
+			plane.position.x = 10;
+			plane_animation(scene, plane);
+		}
+		planeTask.onError = function(task, message, exception) {
+			console.log(message, exception);
+		}
+
+		var volcanoTask = assetsManager.addMeshTask("volcano task", "", "./volcano/", "scene.gltf");
+
+		volcanoTask.onSuccess = function(task) {
+
+			var volcano = task.loadedMeshes[0]
+			// volcano.checkCollisions = true;
+			volcano.scaling = new BABYLON.Vector3(30, 30, 20);
+			volcano.position.x = 0;
+			volcano.position.z = -60;
+
+			// Create an eruption
+			build_eruption_volcano(scene)
+		}
+
+		volcanoTask.onError = function(task, message, exception) {
+			console.log(message, exception);
+		}
+
+		var airportTask = assetsManager.addMeshTask("airport task", "", "./airport/", "scene.gltf");
+		airportTask.onSuccess = function(task) {
+			var airport = task.loadedMeshes[0];
+		}
+
+		airportTask.onError = function(task, message, exception) {
+			console.log(message, exception);
+		}
+
+		click_airport(scene, camera);
+
+
+		assetsManager.load();
+		// debug(scene);
+
+		return scene;
+	};
+
+
+	const canvas = document.getElementById("renderCanvas"); // Get the canvas element
+	const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
+	let divFps = document.getElementById("fps");
+	// Add your code here matching the playground format
+
+	const scene = createScene(); //Call the createScene function
+
+	// Register a render loop to repeatedly render the scene
+	engine.runRenderLoop(function() {
+		scene.render();
+		divFps.innerHTML = engine.getFps().toFixed() + " fps";
+	});
+
+	// Watch for browser/canvas resize events
+	window.addEventListener("resize", function() {
+		engine.resize();
+	});
+
+	function set_collision_camera(scene) {
+		//Add the camera, to be shown as a cone and surrounding collision volume
+		var camera = new BABYLON.UniversalCamera("MyCamera", new BABYLON.Vector3(0, 0.5, 0), scene);
+		camera.attachControl(canvas, true);
+		camera.speed = 0.02;
+		camera.angularSpeed = 0.05;
+		camera.angle = Math.PI;
+		camera.direction = (new BABYLON.Vector3(0, 0, 1));
+		camera.applyGravity = true;
+
+		camera.inputs.removeByType("FreeCameraKeyboardMoveInput");
+		camera.inputs.removeByType("FreeCameraMouseInput");
+
+		//Key Input Manager To Use Keys to Move Forward and BackWard and Look to the Left or Right
+		var FreeCameraKeyboardWalkInput = function () {
+			this._keys = [];
+			this.keysUp = [38];
+			this.keysDown = [40];
+			this.keysLeft = [39];
+			this.keysRight = [37];
+		}
+
+		//Add attachment controls
+		FreeCameraKeyboardWalkInput.prototype.attachControl = function(noPreventDefault) {
+			var _this = this;
+			var engine = this.camera.getEngine();
+			var element = engine.getInputElement();
+			if (!this._onKeyDown) {
+				element.tabIndex = 1;
+				this._onKeyDown = function(evt) {
+					if (_this.keysUp.indexOf(evt.keyCode) !== -1 ||
+						_this.keysDown.indexOf(evt.keyCode) !== -1 ||
+						_this.keysLeft.indexOf(evt.keyCode) !== -1 ||
+						_this.keysRight.indexOf(evt.keyCode) !== -1) {
+						var index = _this._keys.indexOf(evt.keyCode);
+						if (index === -1) {
+							_this._keys.push(evt.keyCode);
+						}
+						if (!noPreventDefault) {
+							evt.preventDefault();
+						}
+					}
+				};
+				this._onKeyUp = function(evt) {
+					if (_this.keysUp.indexOf(evt.keyCode) !== -1 ||
+						_this.keysDown.indexOf(evt.keyCode) !== -1 ||
+						_this.keysLeft.indexOf(evt.keyCode) !== -1 ||
+						_this.keysRight.indexOf(evt.keyCode) !== -1) {
+						var index = _this._keys.indexOf(evt.keyCode);
+						if (index >= 0) {
+							_this._keys.splice(index, 1);
+						}
+						if (!noPreventDefault) {
+							evt.preventDefault();
+						}
+					}
+				};
+				element.addEventListener("keydown", this._onKeyDown, false);
+				element.addEventListener("keyup", this._onKeyUp, false);
 			}
-			planeTask.onError = function (task, message, exception) {
-			    console.log(message, exception);
-			}
-
-			var volcanoTask = assetsManager.addMeshTask("volcano task", "", "./volcano/", "scene.gltf");
-
-			volcanoTask.onSuccess = function (task) {
-				
-				var volcano = task.loadedMeshes[0]
-				// volcano.checkCollisions = true;
-				volcano.scaling = new BABYLON.Vector3(30, 30, 20);
-				volcano.position.x = 0;
-				volcano.position.z = -60;
-
-				// Create an eruption
-			    	build_eruption_volcano(scene)
-			}
-
-			volcanoTask.onError = function (task, message, exception) {
-			    	console.log(message, exception);
-			}
-
-			var airportTask = assetsManager.addMeshTask("airport task", "", "./airport/", "scene.gltf");
-			airportTask.onSuccess = function (task) {
-				var airport = task.loadedMeshes[0];
-				// airport.checkCollisions = true;
-			}
-
-			airportTask.onError = function (task, message, exception) {
-			    console.log(message, exception);
-			}
-
-			click_airport(scene, camera);
-			
-
-			assetsManager.load();
-
-		    return scene;
 		};
- 
- 
-        const canvas = document.getElementById("renderCanvas"); // Get the canvas element
-        const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
- 
-        // Add your code here matching the playground format
- 
-        const scene = createScene(); //Call the createScene function
- 
-        // Register a render loop to repeatedly render the scene
-        engine.runRenderLoop(function () {
-                scene.render();
-        });
- 
-        // Watch for browser/canvas resize events
-        window.addEventListener("resize", function () {
-                engine.resize();
-        });
-
-        function set_camera(scene)
-        {
-
-        	camera = new BABYLON.UniversalCamera("FreeCamera", new BABYLON.Vector3(0, 0.5, 0), scene);
-        	camera.applyGravity = true
-	        camera.speed = 0.5;
-	        camera.cameraDirection = (new BABYLON.Vector3(0, 0, -1));
-
-	        camera.attachControl(canvas);
-	        scene.registerBeforeRender(function () {    camera.rotation.x = 0;})
-
-	        return camera;
-        }
 
 
-        /*
-        function handle_collision_camera(camera , scene)
-        {
-		camera.ellipsoid = new BABYLON.Vector3(1, 1, 1);
-        	camera.attachControl(canvas, true);
-        	scene.collisionsEnabled = true;
-        	camera.checkCollisions = true;
-        }
-        */
+		//Add detachment controls
+		FreeCameraKeyboardWalkInput.prototype.detachControl = function() {
+			var engine = this.camera.getEngine();
+			var element = engine.getInputElement();
+			if (this._onKeyDown) {
+				element.removeEventListener("keydown", this._onKeyDown);
+				element.removeEventListener("keyup", this._onKeyUp);
+				BABYLON.Tools.UnregisterTopRootEvents([
+					{ name: "blur", handler: this._onLostFocus }
+				]);
+				this._keys = [];
+				this._onKeyDown = null;
+				this._onKeyUp = null;
+			}
+		};
+
+		//Keys movement control by checking inputs
+		FreeCameraKeyboardWalkInput.prototype.checkInputs = function() {
+			if (this._onKeyDown) {
+				var camera = this.camera;
+				for (var index = 0; index < this._keys.length; index++) {
+					var keyCode = this._keys[index];
+					var speed = camera.speed;
+					if (this.keysLeft.indexOf(keyCode) !== -1) {
+						camera.rotation.y -= camera.angularSpeed;
+						camera.direction.copyFromFloats(0, 0, 0);
+					} else if (this.keysUp.indexOf(keyCode) !== -1) {
+						camera.direction.copyFromFloats(0, 0, speed);
+					} else if (this.keysRight.indexOf(keyCode) !== -1) {
+						camera.rotation.y += camera.angularSpeed;
+						camera.direction.copyFromFloats(0, 0, 0);
+					} else if (this.keysDown.indexOf(keyCode) !== -1) {
+						camera.direction.copyFromFloats(0, 0, -speed);
+					}
+					if (camera.getScene().useRightHandedSystem) {
+						camera.direction.z *= -1;
+					}
+					camera.getViewMatrix().invertToRef(camera._cameraTransformMatrix);
+					BABYLON.Vector3.TransformNormalToRef(camera.direction, camera._cameraTransformMatrix, camera._transformedDirection);
+					camera.cameraDirection.addInPlace(camera._transformedDirection);
+				}
+			}
+		};
+
+		//Add the onLostFocus function
+		FreeCameraKeyboardWalkInput.prototype._onLostFocus = function(e) {
+			this._keys = [];
+		};
+
+		//Add the two required functions for the control Name
+		FreeCameraKeyboardWalkInput.prototype.getClassName = function() {
+			return "FreeCameraKeyboardWalkInput";
+		};
+
+		FreeCameraKeyboardWalkInput.prototype.getSimpleName = function() {
+			return "keyboard";
+		};
+
+		//Add the new keys input manager to the camera.
+		camera.inputs.add(new FreeCameraKeyboardWalkInput());
 
 
-        function click_airport(scene, camera)
-        {
 
-        	var colors = [
-        		new BABYLON.Color4(0.85, 0.16, 0.12),
-        		new BABYLON.Color4(0.85, 0.16, 0.12),
-        		new BABYLON.Color4(0.85, 0.16, 0.12),
-        	]
+		//The Mouse Manager to use the mouse (touch) to search around including above and below
+		var FreeCameraSearchInput = function(touchEnabled) {
+			if (touchEnabled === void 0) {
+				touchEnabled = true;
+			}
+			this.touchEnabled = touchEnabled;
+			this.buttons = [0, 1, 2];
+			this.angularSensibility = 2000.0;
+			this.restrictionX = 100;
+			this.restrictionY = 60;
+		}
+
+		//add attachment control which also contains the code to react to the input from the mouse 
+		FreeCameraSearchInput.prototype.attachControl = function(noPreventDefault) {
+			var _this = this;
+			var engine = this.camera.getEngine();
+			var element = engine.getInputElement();
+			var angle = { x: 0, y: 0 };
+			if (!this._pointerInput) {
+				this._pointerInput = function(p, s) {
+					var evt = p.event;
+					if (!_this.touchEnabled && evt.pointerType === "touch") {
+						return;
+					}
+					if (p.type !== BABYLON.PointerEventTypes.POINTERMOVE && _this.buttons.indexOf(evt.button) === -1) {
+						return;
+					}
+					if (p.type === BABYLON.PointerEventTypes.POINTERDOWN) {
+						try {
+							evt.srcElement.setPointerCapture(evt.pointerId);
+						} catch (e) {
+							//Nothing to do with the error. Execution will continue.
+						}
+						_this.previousPosition = {
+							x: evt.clientX,
+							y: evt.clientY
+						};
+						if (!noPreventDefault) {
+							evt.preventDefault();
+							element.focus();
+						}
+					} else if (p.type === BABYLON.PointerEventTypes.POINTERUP) {
+						try {
+							evt.srcElement.releasePointerCapture(evt.pointerId);
+						} catch (e) {
+							//Nothing to do with the error.
+						}
+						_this.previousPosition = null;
+						if (!noPreventDefault) {
+							evt.preventDefault();
+						}
+					} else if (p.type === BABYLON.PointerEventTypes.POINTERMOVE) {
+						if (!_this.previousPosition || engine.isPointerLock) {
+							return;
+						}
+						var offsetX = evt.clientX - _this.previousPosition.x;
+						var offsetY = evt.clientY - _this.previousPosition.y;
+						angle.x += offsetX;
+						angle.y -= offsetY;
+						if (Math.abs(angle.x) > _this.restrictionX) {
+							angle.x -= offsetX;
+						}
+						if (Math.abs(angle.y) > _this.restrictionY) {
+							angle.y += offsetY;
+						}
+						if (_this.camera.getScene().useRightHandedSystem) {
+							if (Math.abs(angle.x) < _this.restrictionX) {
+								_this.camera.cameraRotation.y -= offsetX / _this.angularSensibility;
+							}
+						} else {
+							if (Math.abs(angle.x) < _this.restrictionX) {
+								_this.camera.cameraRotation.y += offsetX / _this.angularSensibility;
+							}
+						}
+						if (Math.abs(angle.y) < _this.restrictionY) {
+							_this.camera.cameraRotation.x += offsetY / _this.angularSensibility;
+						}
+						_this.previousPosition = {
+							x: evt.clientX,
+							y: evt.clientY
+						};
+						if (!noPreventDefault) {
+							evt.preventDefault();
+						}
+					}
+				};
+			}
+			this._onSearchMove = function(evt) {
+				if (!engine.isPointerLock) {
+					return;
+				}
+				var offsetX = evt.movementX || evt.mozMovementX || evt.webkitMovementX || evt.msMovementX || 0;
+				var offsetY = evt.movementY || evt.mozMovementY || evt.webkitMovementY || evt.msMovementY || 0;
+				if (_this.camera.getScene().useRightHandedSystem) {
+					_this.camera.cameraRotation.y -= offsetX / _this.angularSensibility;
+				} else {
+					_this.camera.cameraRotation.y += offsetX / _this.angularSensibility;
+				}
+				_this.camera.cameraRotation.x += offsetY / _this.angularSensibility;
+				_this.previousPosition = null;
+				if (!noPreventDefault) {
+					evt.preventDefault();
+				}
+			};
+			this._observer = this.camera.getScene().onPointerObservable.add(this._pointerInput, BABYLON.PointerEventTypes.POINTERDOWN | BABYLON.PointerEventTypes.POINTERUP | BABYLON.PointerEventTypes.POINTERMOVE);
+			element.addEventListener("mousemove", this._onSearchMove, false);
+		};
+
+		//Add detachment control
+		FreeCameraSearchInput.prototype.detachControl = function() {
+			var engine = this.camera.getEngine();
+			var element = engine.getInputElement();
+			if (this._observer && element) {
+				this.camera.getScene().onPointerObservable.remove(this._observer);
+				element.removeEventListener("mousemove", this._onSearchMove);
+				this._observer = null;
+				this._onSearchMove = null;
+				this.previousPosition = null;
+			}
+		};
+
+		//Add the two required functions for names
+		FreeCameraSearchInput.prototype.getClassName = function() {
+			return "FreeCameraSearchInput";
+		};
+
+		FreeCameraSearchInput.prototype.getSimpleName = function() {
+			return "MouseSearchCamera";
+		};
+
+		//Add the new mouse input manager to the camera
+		camera.inputs.add(new FreeCameraSearchInput());
+		scene.registerBeforeRender(function() { camera.rotation.x = 0; })
+
+		return camera;
+
+	}
+
+	function old_camera(scene) {
+		camera = new BABYLON.UniversalCamera("FreeCamera", new BABYLON.Vector3(0, 0.7, 0), scene);
+		camera.applyGravity = true
+		camera.speed = 0.08;
+		// camera.inertia = 0.3;
+		camera.cameraDirection = (new BABYLON.Vector3(0, 0, -1));
+
+		camera.attachControl(canvas);
+		scene.registerBeforeRender(function() { camera.rotation.x = 0; })
+
+		return camera;
+	}
+
+
+	function debug(scene) {
+		scene.debugLayer.show();
+	}
+
+
+
+	function click_airport(scene, camera) {
+
+		var colors = [
+			new BABYLON.Color4(0.85, 0.16, 0.12),
+			new BABYLON.Color4(0.85, 0.16, 0.12),
+			new BABYLON.Color4(0.85, 0.16, 0.12),
+			new BABYLON.Color4(0.85, 0.16, 0.12),
+		]
 
 		//add transparent box to handle click
-		const box = BABYLON.MeshBuilder.CreateBox("box", { height: 0.5, width: 1, depth: 0.5, faceColors: colors});
-		box.position.x = 1.8;
-		box.position.z = -16.66;
+		const box = BABYLON.MeshBuilder.CreateBox("box", { height: 1, width: 1, depth: 1, faceColors: colors });
+		box.position.x = -2;
+		box.position.z = -16.1;
 		box.position.y = 0;
 
-		const boxMat = new BABYLON.StandardMaterial("boxMat");
-		boxMat.diffuseTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/ground.png");
-		box.texture = boxMat;
-		
+		// const boxMat = new BABYLON.StandardMaterial("boxMat");
+		// boxMat.diffuseTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/ground.png");
+		// box.texture = boxMat;
+
 		// On pick interpolations
-		var prepareButton = function (mesh) {
+		var prepareButton = function(mesh) {
 
 			mesh.actionManager = new BABYLON.ActionManager(scene);
-			mesh.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
+			mesh.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function() {
 				alert('player clicked');
 				window.location.reload();
 			}));
-				
+
 		}
 
 		prepareButton(box);
 
-        }
+	}
 
-        function build_eruption_volcano(scene)
-        {
-        	var particleSystem = new BABYLON.ParticleSystem("particles", 5000, scene);
+	function build_eruption_volcano(scene) {
+		var particleSystem = new BABYLON.ParticleSystem("particles", 5000, scene);
 
-        	//Texture of each particle
-        	particleSystem.particleTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/flare.png", scene);
+		//Texture of each particle
+		particleSystem.particleTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/flare.png", scene);
 
-        	// Where the particles come from
-        	particleSystem.emitter = new BABYLON.Vector3(0, 10, -30); // the starting object, the emitter
-        	particleSystem.minEmitBox = new BABYLON.Vector3(-3, 10, -28); // Starting all from
-        	particleSystem.maxEmitBox = new BABYLON.Vector3(3, 15, -25); // To...
+		// Where the particles come from
+		particleSystem.emitter = new BABYLON.Vector3(0, 10, -30); // the starting object, the emitter
+		particleSystem.minEmitBox = new BABYLON.Vector3(-3, 10, -28); // Starting all from
+		particleSystem.maxEmitBox = new BABYLON.Vector3(3, 15, -25); // To...
 
-        	// Colors of all particles
-        	particleSystem.color1 = new BABYLON.Color4(0.85, 0.16, 0.12);
-        	particleSystem.color2 = new BABYLON.Color4(0.89, 0.12, 0.16, 1.0);
-        	particleSystem.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+		// Colors of all particles
+		particleSystem.color1 = new BABYLON.Color4(0.85, 0.16, 0.12);
+		particleSystem.color2 = new BABYLON.Color4(0.89, 0.12, 0.16, 1.0);
+		particleSystem.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
 
-        	// Size of each particle (random between...
-        	particleSystem.minSize = 0.5;
-        	particleSystem.maxSize = 1;
+		// Size of each particle (random between...
+		particleSystem.minSize = 0.5;
+		particleSystem.maxSize = 1;
 
-        	// Life time of each particle (random between...
-        	particleSystem.minLifeTime = 1;
-        	particleSystem.maxLifeTime = 3;
+		// Life time of each particle (random between...
+		particleSystem.minLifeTime = 1;
+		particleSystem.maxLifeTime = 3;
 
-        	// Emission rate
-        	particleSystem.emitRate = 750;
+		// Emission rate
+		particleSystem.emitRate = 750;
 
-        	// Blend mode : BLENDMODE_ONEONE, or BLENDMODE_STANDARD
-        	particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+		// Blend mode : BLENDMODE_ONEONE, or BLENDMODE_STANDARD
+		particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
 
-        	// Set the gravity of all particles
-        	particleSystem.gravity = new BABYLON.Vector3(0, -9.81, 0);
+		// Set the gravity of all particles
+		particleSystem.gravity = new BABYLON.Vector3(0, -9.81, 0);
 
-        	// Direction of each particle after it has been emitted
-        	particleSystem.direction1 = new BABYLON.Vector3(-2, 8, 2);
-        	particleSystem.direction2 = new BABYLON.Vector3(2, 8, -2);
+		// Direction of each particle after it has been emitted
+		particleSystem.direction1 = new BABYLON.Vector3(-2, 8, 2);
+		particleSystem.direction2 = new BABYLON.Vector3(2, 8, -2);
 
-        	// Angular speed, in radians
-        	particleSystem.minAngularSpeed = 0;
-        	particleSystem.maxAngularSpeed = Math.PI;
+		// Angular speed, in radians
+		particleSystem.minAngularSpeed = 0;
+		particleSystem.maxAngularSpeed = Math.PI;
 
-        	// Speed
-        	particleSystem.minEmitPower = 1;
-        	particleSystem.maxEmitPower = 3;
-        	particleSystem.updateSpeed = 0.025;
-        	particleSystem.start();
-        }
+		// Speed
+		particleSystem.minEmitPower = 1;
+		particleSystem.maxEmitPower = 3;
+		particleSystem.updateSpeed = 0.025;
+		particleSystem.start();
+	}
 
-        function build_sky(scene)
-        {
-		const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:150}, scene);
+	function build_sky(scene) {
+		const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 150 }, scene);
 		const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
 		skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("https://assets.babylonjs.com/textures/skybox", scene);
@@ -240,40 +503,37 @@
 		skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
 		skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
 		skybox.material = skyboxMaterial;
-        }
+	}
 
-        function plane_animation(scene, plane)
-        {
+	function plane_animation(scene, plane) {
 
-	        const animPlaneZ = new BABYLON.Animation("planeZAnimation", "position.z", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+		const animPlaneZ = new BABYLON.Animation("planeZAnimation", "position.z", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
 
-	        const planeZKeys = []; 
-	        var init_z = -25
-	        var frame = 0;
-	        var avancement_z = 5;
+		const planeZKeys = [];
+		var init_z = -25
+		var frame = 0;
+		var avancement_z = 5;
 
-	        for (var i = 0; i <10; i++){
-	            planeZKeys.push({
-	                frame: frame,
-	                value: init_z
-	            });
-	            frame = frame + 15;
-	            init_z = init_z + avancement_z;
-	        }
+		for (var i = 0; i < 10; i++) {
+			planeZKeys.push({
+				frame: frame,
+				value: init_z
+			});
+			frame = frame + 15;
+			init_z = init_z + avancement_z;
+		}
 
-	        animPlaneZ.setKeys(planeZKeys);
+		animPlaneZ.setKeys(planeZKeys);
 
-	        plane.animations = [];
-	        plane.animations.push(animPlaneZ);
-
-	        
+		plane.animations = [];
+		plane.animations.push(animPlaneZ);
 
 
-	        scene.beginAnimation(plane, 0, 300, true);
-        }
+
+
+		scene.beginAnimation(plane, 0, 300, true);
+	}
 	</script>
- 
- 
- 
 </body>
+
 </html>
