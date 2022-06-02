@@ -42,11 +42,10 @@
 	<div id="fps">0</div>
 	<script>
 
-		const debug = true;
+		const debug = false;
 		var state = "landing";
-		var plane_landing_x = false;
-		var plane_landing_y = false;
-		var plane_landing_z = false;
+
+		var plane_landed = false;
 
 		var list_point_plane = [
 			{x: 3465.413531382067 , z: 979.9895619290932 },
@@ -79,8 +78,7 @@
 		];
 
 
-		var planed_clicked = false;
-		var plane = null;
+		var plane_clicked = false;
 
 	const createScene = function() {
 
@@ -97,10 +95,7 @@
 		// click_airport(scene, camera);
 		assetsManager.load();
 
-		if(debug)
-		{
-			scene.debugLayer.show();
-		}
+		scene.debugLayer.show();
 
 		return scene;
 	};
@@ -119,16 +114,17 @@
 		divFps.innerHTML = engine.getFps().toFixed() + " fps";
 		if(state == "landing" )
 		{
-			if(plane_landing_x && plane_landing_y && plane_landing_y)
+			if(plane_landed)
 			{
-				set_state("walking");
+				alert("set state to walking")
+				set_state("walking", scene);
 			}
 		}
 		else if(state == "walking")
 		{
 			if(planed_clicked)
 			{
-				set_state("take_off");
+				set_state("take_off", scene);
 			}
 		}
 		// console.log("position x " + camera.position.x + " y " + camera.position.y);
@@ -151,7 +147,7 @@
 			//rotate plane dans le bon sens pour partir
 			plane.rotation = new BABYLON.Vector3(0, 0.85521133, 0);
 			//remove camera
-			scene.activeCamera = scene.getMeshByName("walking_camera");
+			scene.activeCamera = scene.getNodeByName("walking_camera");
 			// add fps camera
 			// add interaction click on plane
 			// afficher  message
@@ -160,7 +156,7 @@
 		}
 		else if( state == "take_off")
 		{
-			scene.activeCamera =  scene.getMeshByName("plane_camera");
+			scene.activeCamera =  scene.getNodeByName("plane_camera");
 			//change camera to plane
 			//
 
@@ -194,23 +190,17 @@
 		ground.material = groundMat;
 		ground.position.y = -1;
 
-		if(debug)
-		{
-			set_camera_debug(scene);
-		}
-		else
-		{
-			set_camera(scene);
-		}
+		
+		set_camera(scene);
 
 	}
 
 
 	function set_camera(scene) {
 		
-		//walking_camera
+		walking_camera
 		var walking_camera = new BABYLON.UniversalCamera("walking_camera", new BABYLON.Vector3(2200, 2, 0), scene);
-		walking_camera.attachControl(canvas, true);
+		// walking_camera.attachControl(canvas, true);
 		walking_camera.speed = 0.05;
 		walking_camera.angularSpeed = 0.05;
 		walking_camera.angle = Math.PI;
@@ -218,7 +208,7 @@
 		walking_camera.applyGravity = true;
 
 		//custom camera movement as fps camera
-		walking_camera = set_as_fps_camera(camera);
+		walking_camera = set_as_fps_camera(walking_camera);
 
 		scene.registerBeforeRender(function() {
 			walking_camera.rotation.x = 0; 
@@ -227,26 +217,21 @@
 		//plane camera
 		var plane_camera = new BABYLON.ArcRotateCamera("plane_camera", -Math.PI / 2, Math.PI / 2.5, 25, new BABYLON.Vector3(0, 0, 0));
 	    plane_camera.upperBetaLimit = Math.PI / 2.2;
+		plane_camera.attachControl(canvas, true);
 
 
 
 		//debug_camera
-		if(debug)
-		{
-			var debug_camera = new BABYLON.ArcRotateCamera("debug_camera", -Math.PI / 2, Math.PI / 2.5, 15, new BABYLON.Vector3(2200, 5 , 10));
-	    	debug_camera.attachControl(canvas, true);
+		// if(debug)
+		// {
+		// 	var debug_camera = new BABYLON.ArcRotateCamera("debug_camera", -Math.PI / 2, Math.PI / 2.5, 15, new BABYLON.Vector3(2200, 5 , 10));
+	 //    	debug_camera.attachControl(canvas, true);
 
-			scene.registerBeforeRender(function() { 
-				console.log("position x " + debug_camera.position.x + " z " + debug_camera.position.z)
-			})
+		// 	scene.registerBeforeRender(function() { 
+		// 		console.log("position x " + debug_camera.position.x + " z " + debug_camera.position.z)
+		// 	})
 
-		}
-
-		
-
-
-
-		return camera;
+		// }
 
 	}
 
@@ -255,6 +240,8 @@
 
 		var planeTask = assetsManager.addMeshTask("plane task", "", "./plane/", "plane.glb");
 		planeTask.onSuccess = function(task) {
+
+			var plane_camera = scene.getNodeByName("plane_camera");
 			plane = task.loadedMeshes[0];
 			plane.name = "plane";
 			plane.position.y = 5;
@@ -262,6 +249,7 @@
 			plane.position.z = 10;
 			plane.scaling = new BABYLON.Vector3(50, 50, 50);
 			plane.rotation = new BABYLON.Vector3(0, 4.189, 0);
+			plane_camera.lockedTarget = plane;
 			plane_landing(scene, plane);
 			// plane_take_off(scene, plane);
 			// plane_animation(scene, plane);
@@ -328,7 +316,7 @@
 		]
 
 		//add transparent box to handle click
-		const box = BABYLON.MeshBuilder.CreateBox("entry_box", { height: 10, width: 1, depth: 50, faceColors: colors});
+		const entry_box = BABYLON.MeshBuilder.CreateBox("entry_box", { height: 10, width: 1, depth: 50, faceColors: colors});
 
 		entry_box.position.x = 602.175;
 		entry_box.position.z = -23.393151674846592;
@@ -422,10 +410,9 @@
 
 		// if(debug)
 		// {
-		// 	construct_lines_landing(scene);
+			// 	construct_lines_takeoff(scene);
 		// }
 
-		
 		var plane = scene.getMeshByName("plane");
 		plane.animations = [];
 
@@ -486,25 +473,18 @@
 		animLandingY.setKeys(LandingYKeys);
 
 
-		animLandingX.onAnimationEnd(function(){
-			plane_landing_x = true;
-		})
-
-		animLandingY.onAnimationEnd(function(){
-			plane_landing_y = true;
-		})
-
-		animLandingZ.onAnimationEnd(function(){
-			plane_landing_z = true;
-		})
 
 
 		plane.animations.push(animLandingX);
 		plane.animations.push(animLandingZ);
 		plane.animations.push(animLandingY);
 
-		scene.beginAnimation(plane, 0, 375, false);
+		var all = scene.beginAnimation(plane, 0, 375, false);
 
+		all.onAnimationEnd = function()
+		{
+			plane_landed = true;
+		}
 	}
 
 	function plane_landing(scene)
@@ -573,25 +553,19 @@
 		animLandingX.setKeys(LandingXKeys);
 		animLandingY.setKeys(LandingYKeys);
 
-
-		animLandingX.onAnimationEnd(function(){
-			plane_landing_x = true;
-		})
-
-		animLandingY.onAnimationEnd(function(){
-			plane_landing_y = true;
-		})
-
-		animLandingZ.onAnimationEnd(function(){
-			plane_landing_z = true;
-		})
-
-
 		plane.animations.push(animLandingX);
 		plane.animations.push(animLandingZ);
 		plane.animations.push(animLandingY);
 
-		scene.beginAnimation(plane, 0, 375, false);
+		// scene.beginAnimation(plane, 0, 375, false);
+
+		var all = scene.beginAnimation(plane, 0, 375, false);
+
+		all.onAnimationEnd = function()
+		{
+			plane_landed = true;
+
+		}
 
 	}
 
