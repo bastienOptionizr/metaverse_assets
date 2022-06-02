@@ -1,0 +1,685 @@
+<html>
+
+<head>
+	<style>
+	#fps {
+		position: absolute;
+		background-color: black;
+		border: 2px solid red;
+		text-align: center;
+		font-size: 16px;
+		color: white;
+		top: 15px;
+		right: 10px;
+		width: 60px;
+		height: 20px;
+	}
+	</style>
+	<script src="scripts/plugins/babylon.js"></script>
+	<!-- <script src="https://cdn.babylonjs.com/babylon.objFileLoader.js"></script> -->
+	<script src="scripts/plugins/babylon.max.js"></script>
+	<script src="scripts/plugins/babylonjs.materials.min.js"></script>
+	<!-- <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.js"></script> -->
+	<script src="scripts/plugins/babylonjs.loaders.min.js"></script>
+	<script src="scripts/plugins/babylonjs.loaders.js"></script>
+	<script src="scripts/plugins/babylonjs.postProcess.min.js"></script>
+	<script src="scripts/plugins/babylonjs.postProcess.js"></script>
+	<script src="scripts/plugins/babylonjs.proceduralTextures.min.js"></script>
+	<script src="scripts/plugins/babylonjs.proceduralTextures.js"></script>
+	<script src="scripts/plugins/babylonjs.serializers.min.js"></script>
+	<script src="scripts/plugins/babylonjs.serializers.js"></script>
+	<script src="scripts/plugins/babylon.gui.min.js"></script>
+	<script src="scripts/plugins/babylon.gui.js"></script>
+	<script src="scripts/plugins/babylon.inspector.bundle.js"></script>
+	<script src="scripts/plugins/babylon.inspector.bundle.max.js"></script>
+	<script src="scripts/plugins/babylon.viewer.js"></script>
+	<script src="scripts/plugins/babylon.viewer.max.js"></script>
+	<script src="scripts/fps_camera.js"></script>
+</head>
+
+<body>
+	<canvas id="renderCanvas" style="width:800px; height: 600px;" touch-action="none"></canvas> <!-- touch-action="none" for best results from PEP -->
+	<div id="fps">0</div>
+	<script>
+
+		const debug = true;
+		var state = "landing";
+		var plane_landing_x = false;
+		var plane_landing_y = false;
+		var plane_landing_z = false;
+
+		var list_point_plane = [
+			{x: 3465.413531382067 , z: 979.9895619290932 },
+			{x: 3370.1584337940567 , z: 955.5917140923693 },
+			{x: 3314.117202518536 , z: 913.5967225405558 },
+			{x: 3225.0698312953655 , z: 864.4610299860506 },
+			{x: 3135.276036360834 , z: 815.9141346396681 },
+			{x: 3070.5111231778437 , z: 783.6124801113249 },
+			{x: 3016.4566881532182 , z: 754.0942299493585 },
+			{x: 2974.6597720615937 , z: 725.7462349276109 },
+			{x: 2933.0642311440133 , z: 711.6079285997977 },
+			{x: 2858.554388979942 , z: 673.3540714514554 },
+			{x: 2775.179880493315 , z: 628.748892649813 },
+			{x: 2700.610464432293 , z: 588.2304609088783 },
+			{x: 2615.5631746459812 , z: 541.794298567386 },
+			{x: 2513.967066781696 , z: 491.6888858670654 },
+			{x: 2434.811437142862 , z: 457.0193002075283 },
+			{x: 2339.0909381152255 , z: 390.4574643917356 },
+			{x: 2233.560812873923 , z: 343.4934429707783 },
+			{x: 2169.698613840012 , z: 313.70918551046515 },
+			{x: 2121.638996834432 , z: 304.98683107403866 },
+			{x: 1988.3388809921598 , z: 243.02268530273273 },
+			{x: 1786.9484592552446 , z: 110.18915748171564 },
+			{x: 1645.4031201108855 , z: 32.5534260714661 },
+			{x: 1595.2165689903004 , z: 4.93841374630092 },
+			{x: 1545.6947507182822 , z: -15.502281258958295 },
+			{x: 1497.2782709616602 , z: -43.05119366013951 },
+			{x: 1402.7695015357071 , z: -99.17332140158 },
+
+		];
+
+
+		var planed_clicked = false;
+		var plane = null;
+
+	const createScene = function() {
+
+		alert("find your way to the san fransisco airport ! (red box) Move with the direction keys and your mouse to orient the camera ");
+
+		const scene = new BABYLON.Scene(engine);
+		scene.useRightHandedSystem = true;
+
+		var assetsManager = new BABYLON.AssetsManager(scene);
+		
+		build_scene(scene);
+
+		var assetsManager =  import_meshes_task(scene, assetsManager);
+		// click_airport(scene, camera);
+		assetsManager.load();
+
+		if(debug)
+		{
+			scene.debugLayer.show();
+		}
+
+		return scene;
+	};
+
+
+	const canvas = document.getElementById("renderCanvas"); // Get the canvas element
+	const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
+	let divFps = document.getElementById("fps");
+	// Add your code here matching the playground format
+
+	const scene = createScene(); //Call the createScene function
+
+	// Register a render loop to repeatedly render the scene
+	engine.runRenderLoop(function() {
+		scene.render();
+		divFps.innerHTML = engine.getFps().toFixed() + " fps";
+		if(state == "landing" )
+		{
+			if(plane_landing_x && plane_landing_y && plane_landing_y)
+			{
+				set_state("walking");
+			}
+		}
+		else if(state == "walking")
+		{
+			if(planed_clicked)
+			{
+				set_state("take_off");
+			}
+		}
+		// console.log("position x " + camera.position.x + " y " + camera.position.y);
+	});
+
+	// Watch for browser/canvas resize events
+	window.addEventListener("resize", function() {
+		engine.resize();
+	});
+
+	function set_state(state, scene)
+	{
+
+		if(state == "walking")
+		{
+			var plane = scene.getMeshByName("plane")
+			// remove animation landing
+			scene.stopAnimation(plane)
+			// plane.animations = [];
+			//rotate plane dans le bon sens pour partir
+			plane.rotation = new BABYLON.Vector3(0, 0.85521133, 0);
+			//remove camera
+			scene.activeCamera = scene.getMeshByName("walking_camera");
+			// add fps camera
+			// add interaction click on plane
+			// afficher  message
+
+			state = "walking";
+		}
+		else if( state == "take_off")
+		{
+			scene.activeCamera =  scene.getMeshByName("plane_camera");
+			//change camera to plane
+			//
+
+		}
+		else
+		{
+			alert("error");
+		}
+
+	}
+
+	function build_scene(scene)
+	{
+		const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
+
+		//build sky
+		const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { width: 8000, height: 2000, depth: 8000 }, scene);
+		const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+		skyboxMaterial.backFaceCulling = false;
+		skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("https://assets.babylonjs.com/textures/skybox", scene);
+		skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+		skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+		skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+		skybox.material = skyboxMaterial;
+
+		//build_ground
+		const groundMat = new BABYLON.StandardMaterial("groundMat");
+		groundMat.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/textures/waterbump.png");
+		groundMat.diffuseTexture.hasAlpha = true;
+		const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:8000, height:8000});
+		ground.material = groundMat;
+		ground.position.y = -1;
+
+		if(debug)
+		{
+			set_camera_debug(scene);
+		}
+		else
+		{
+			set_camera(scene);
+		}
+
+	}
+
+
+	function set_camera(scene) {
+		
+		//walking_camera
+		var walking_camera = new BABYLON.UniversalCamera("walking_camera", new BABYLON.Vector3(2200, 2, 0), scene);
+		walking_camera.attachControl(canvas, true);
+		walking_camera.speed = 0.05;
+		walking_camera.angularSpeed = 0.05;
+		walking_camera.angle = Math.PI;
+		walking_camera.direction = (new BABYLON.Vector3(0, 0, 1));
+		walking_camera.applyGravity = true;
+
+		//custom camera movement as fps camera
+		walking_camera = set_as_fps_camera(camera);
+
+		scene.registerBeforeRender(function() {
+			walking_camera.rotation.x = 0; 
+		})
+
+		//plane camera
+		var plane_camera = new BABYLON.ArcRotateCamera("plane_camera", -Math.PI / 2, Math.PI / 2.5, 25, new BABYLON.Vector3(0, 0, 0));
+	    plane_camera.upperBetaLimit = Math.PI / 2.2;
+
+
+
+		//debug_camera
+		if(debug)
+		{
+			var debug_camera = new BABYLON.ArcRotateCamera("debug_camera", -Math.PI / 2, Math.PI / 2.5, 15, new BABYLON.Vector3(2200, 5 , 10));
+	    	debug_camera.attachControl(canvas, true);
+
+			scene.registerBeforeRender(function() { 
+				console.log("position x " + debug_camera.position.x + " z " + debug_camera.position.z)
+			})
+
+		}
+
+		
+
+
+
+		return camera;
+
+	}
+
+	function import_meshes_task(scene, assetsManager)
+	{
+
+		var planeTask = assetsManager.addMeshTask("plane task", "", "./plane/", "plane.glb");
+		planeTask.onSuccess = function(task) {
+			plane = task.loadedMeshes[0];
+			plane.name = "plane";
+			plane.position.y = 5;
+			plane.position.x = 2200;
+			plane.position.z = 10;
+			plane.scaling = new BABYLON.Vector3(50, 50, 50);
+			plane.rotation = new BABYLON.Vector3(0, 4.189, 0);
+			plane_landing(scene, plane);
+			// plane_take_off(scene, plane);
+			// plane_animation(scene, plane);
+		}
+		planeTask.onError = function(task, message, exception) {
+			console.log(message, exception);
+		}
+
+		var volcanoTask = assetsManager.addMeshTask("volcano task", "", "./volcano/", "scene.gltf");
+
+		volcanoTask.onSuccess = function(task) {
+
+			var volcano = task.loadedMeshes[0]
+			volcano.name = "volcano";
+			// volcano.checkCollisions = true;
+			volcano.scaling = new BABYLON.Vector3(750, 750, 750);
+			volcano.position.x = -2312.8368196190586;
+			volcano.position.z = 977.4368875149298;
+
+			// Create an eruption
+			// build_eruption_volcano(scene)
+		}
+
+		volcanoTask.onError = function(task, message, exception) {
+			console.log(message, exception);
+		}
+
+		var airportTask = assetsManager.addMeshTask("airport task", "", "./san_fransisco_airport/", "scene.gltf");
+		airportTask.onSuccess = function(task) {
+			var airport = task.loadedMeshes[0];
+			airport.name = "airport";
+			click_airport(scene)
+		}
+
+		airportTask.onError = function(task, message, exception) {
+			console.log(message, exception);
+		}
+
+		return assetsManager;
+		
+		
+	}
+
+
+	function click_airport(scene) {
+
+
+		var colors = [
+			new BABYLON.Color4(0.85, 0.16, 0.12),
+			new BABYLON.Color4(0.85, 0.16, 0.12),
+			new BABYLON.Color4(0.85, 0.16, 0.12),
+			new BABYLON.Color4(0.85, 0.16, 0.12),
+			new BABYLON.Color4(0.85, 0.16, 0.12),
+			new BABYLON.Color4(0.85, 0.16, 0.12),
+		]
+
+		var colors_roof = [
+			new BABYLON.Color4(1, 1, 1),
+			new BABYLON.Color4(1, 1, 1),
+			new BABYLON.Color4(1, 1, 1),
+			new BABYLON.Color4(1, 1, 1),
+			new BABYLON.Color4(1, 1, 1),
+			new BABYLON.Color4(1, 1, 1),
+		]
+
+		//add transparent box to handle click
+		const box = BABYLON.MeshBuilder.CreateBox("entry_box", { height: 10, width: 1, depth: 50, faceColors: colors});
+
+		entry_box.position.x = 602.175;
+		entry_box.position.z = -23.393151674846592;
+		entry_box.position.y = 5;
+		entry_box.rotation = new BABYLON.Vector3(0, 0.29670597, 0);
+		// box.rotation.y  =  16.4;  //rotation around y axis
+
+
+		const roof_box = BABYLON.MeshBuilder.CreateBox("roof_box", { height: 1, width: 10, depth: 50, faceColors: colors_roof});
+
+		roof_box.position.x = 595;
+		roof_box.position.z = -21.390;
+		roof_box.position.y = 10.200;
+		roof_box.rotation = new BABYLON.Vector3(0, 0.29670597, 0);
+
+		const roofMat 			= new BABYLON.StandardMaterial("roofMat");
+	    roofMat.diffuseTexture 	= new BABYLON.Texture("airline.jpeg");
+
+	    roof_box.material = roofMat;
+
+
+	    // On click interpolations
+		var prepareButton = function(mesh) {
+
+			mesh.actionManager = new BABYLON.ActionManager(scene);
+			mesh.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function() {
+				alert('player clicked');
+				window.location.href = '/interior.html'; //relative to domain
+
+			}));
+
+		}
+
+		prepareButton(entry_box);
+		
+
+	}
+
+	function build_eruption_volcano(scene) {
+		var particleSystem = new BABYLON.ParticleSystem("particles", 5000, scene);
+
+		//Texture of each particle
+		particleSystem.particleTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/flare.png", scene);
+
+		// Where the particles come from
+		particleSystem.emitter = new BABYLON.Vector3(-2520.8368196190586, 1500, 1015); // the starting object, the emitter
+		particleSystem.minEmitBox = new BABYLON.Vector3(-2520.8368196190586, 1400, 975); // Starting all from
+		particleSystem.maxEmitBox = new BABYLON.Vector3(-2600, 2000, 1075); // To...
+
+		// Colors of all particles
+		particleSystem.color1 = new BABYLON.Color4(0.85, 0.16, 0.12);
+		particleSystem.color2 = new BABYLON.Color4(0.89, 0.12, 0.16, 1.0);
+		particleSystem.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+
+		// Size of each particle (random between...
+		particleSystem.minSize = 0.5;
+		particleSystem.maxSize = 1;
+
+		// Life time of each particle (random between...
+		particleSystem.minLifeTime = 1;
+		particleSystem.maxLifeTime = 3;
+
+		// Emission rate
+		particleSystem.emitRate = 750;
+
+		// Blend mode : BLENDMODE_ONEONE, or BLENDMODE_STANDARD
+		particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+
+		// Set the gravity of all particles
+		particleSystem.gravity = new BABYLON.Vector3(0, -9.81, 0);
+
+		// Direction of each particle after it has been emitted
+		particleSystem.direction1 = new BABYLON.Vector3(-2, 8, 2);
+		particleSystem.direction2 = new BABYLON.Vector3(2, 8, -2);
+
+		// Angular speed, in radians
+		particleSystem.minAngularSpeed = 0;
+		particleSystem.maxAngularSpeed = Math.PI;
+
+		// Speed
+		particleSystem.minEmitPower = 1;
+		particleSystem.maxEmitPower = 3;
+		particleSystem.updateSpeed = 0.025;
+		particleSystem.start();
+	}
+
+
+
+	function plane_takeoff(scene)
+	{
+
+		// if(debug)
+		// {
+		// 	construct_lines_landing(scene);
+		// }
+
+		
+		var plane = scene.getMeshByName("plane");
+		plane.animations = [];
+
+		var list_point = list_point_plane.reverse();
+		const animLandingZ = new BABYLON.Animation("plane_landing_Animation_z", "position.z", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+
+		const LandingZKeys = [];
+
+		const animLandingY = new BABYLON.Animation("plane_landing_Animation_y", "position.y", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+		const LandingYKeys = [];
+
+		const animLandingX = new BABYLON.Animation("plane_landing_Animation_x", "position.x", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+		const LandingXKeys = [];
+
+
+		var frame = 0;
+		var altitude_initiale = 3;
+		var max_altitude = 600;
+
+		for(var i = 0 ; i<list_point.length; i++)
+		{
+			
+			var point = list_point[i];
+
+			LandingZKeys.push({
+				frame: frame,
+				value: point.z
+			});
+
+			LandingXKeys.push({
+				frame: frame,
+				value: point.x
+			});
+
+			if(i < list_point.length -3)
+			{
+				LandingYKeys.push({
+					frame: frame,
+					value: altitude_initiale
+				});
+			}
+			else
+			{
+				LandingYKeys.push({
+					frame: frame,
+					value: max_altitude
+				});
+			}
+
+			frame += 15;
+			altitude_initiale += altitude_initiale * 0.25
+
+		}
+
+
+		animLandingZ.setKeys(LandingZKeys);
+		animLandingX.setKeys(LandingXKeys);
+		animLandingY.setKeys(LandingYKeys);
+
+
+		animLandingX.onAnimationEnd(function(){
+			plane_landing_x = true;
+		})
+
+		animLandingY.onAnimationEnd(function(){
+			plane_landing_y = true;
+		})
+
+		animLandingZ.onAnimationEnd(function(){
+			plane_landing_z = true;
+		})
+
+
+		plane.animations.push(animLandingX);
+		plane.animations.push(animLandingZ);
+		plane.animations.push(animLandingY);
+
+		scene.beginAnimation(plane, 0, 375, false);
+
+	}
+
+	function plane_landing(scene)
+	{
+
+		// if(debug)
+		// {
+		// 	construct_lines_landing(scene);
+		// }
+
+		var plane = scene.getMeshByName("plane");
+		plane.animations = [];
+
+		const animLandingZ = new BABYLON.Animation("plane_landing_Animation_z", "position.z", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+
+		const LandingZKeys = [];
+
+		const animLandingY = new BABYLON.Animation("plane_landing_Animation_y", "position.y", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+		const LandingYKeys = [];
+
+		const animLandingX = new BABYLON.Animation("plane_landing_Animation_x", "position.x", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+		const LandingXKeys = [];
+
+
+		var frame = 0;
+		var altitude_initiale = 600;
+		var min_altitude = 3;
+
+		for(var i = 0 ; i<list_point_plane.length; i++)
+		{
+			
+			var point = list_point_plane[i];
+
+			LandingZKeys.push({
+				frame: frame,
+				value: point.z
+			});
+
+			LandingXKeys.push({
+				frame: frame,
+				value: point.x
+			});
+
+			if(i < list_point_plane.length -3)
+			{
+				LandingYKeys.push({
+					frame: frame,
+					value: altitude_initiale
+				});
+			}
+			else
+			{
+				LandingYKeys.push({
+					frame: frame,
+					value: min_altitude
+				});
+			}
+
+			frame += 15;
+			altitude_initiale -= altitude_initiale * 0.25
+
+		}
+
+
+		animLandingZ.setKeys(LandingZKeys);
+		animLandingX.setKeys(LandingXKeys);
+		animLandingY.setKeys(LandingYKeys);
+
+
+		animLandingX.onAnimationEnd(function(){
+			plane_landing_x = true;
+		})
+
+		animLandingY.onAnimationEnd(function(){
+			plane_landing_y = true;
+		})
+
+		animLandingZ.onAnimationEnd(function(){
+			plane_landing_z = true;
+		})
+
+
+		plane.animations.push(animLandingX);
+		plane.animations.push(animLandingZ);
+		plane.animations.push(animLandingY);
+
+		scene.beginAnimation(plane, 0, 375, false);
+
+	}
+
+	// function construct_lines_takeoff(scene)
+	// {
+	// 	// var colors = [
+	// 	// 	new BABYLON.Color4(0.85, 0.16, 0.12),
+	// 	// 	new BABYLON.Color4(0.85, 0.16, 0.12),
+	// 	// 	new BABYLON.Color4(0.85, 0.16, 0.12),
+	// 	// 	new BABYLON.Color4(0.85, 0.16, 0.12),
+	// 	// ]
+	// 	// var box_x = 2200;
+	// 	// var box_z = 10;
+	// 	// var box_y = 5;
+
+	// 	// for(var i =0; i<100; i++)
+	// 	// {
+
+	// 	// 	var box = BABYLON.MeshBuilder.CreateBox("takeoff_box " + i, { height: 2, width: 2, depth: 2, faceColors: colors});
+	// 	// 	box.position.x = box_x;
+	// 	// 	box.position.z = box_z;
+	// 	// 	box.position.y = box_y;
+			
+	// 	// 	box_x += 20;
+	// 	// 	box_z += 20*0.57;
+
+	// 	// 	if(box_x > 2700)
+	// 	// 	{
+	// 	// 		box_y += 20*0.15 
+	// 	// 	}
+	// 	// }
+	// }
+
+
+	// function construct_lines_landing(scene)
+	// {
+	// 	// var colors_z = [
+	// 	// 	new BABYLON.Color4(0.16, 0.85, 0.12),
+	// 	// 	new BABYLON.Color4(0.16, 0.85, 0.12),
+	// 	// 	new BABYLON.Color4(0.16, 0.85, 0.12),
+	// 	// 	new BABYLON.Color4(0.16, 0.85, 0.12),
+	// 	// ];
+	// 	// var box_x = 3800;
+	// 	// var box_z = 906;
+	// 	// var box_y = 250;
+
+
+	// 	// //3800 a 3300
+
+	// 	// //reduit l'altitude de 1 tout les 3
+
+	// 	// for(var i = 0; i<125; i++)
+	// 	// {
+	// 	// 	var box = BABYLON.MeshBuilder.CreateBox("landing_box_init_phase" + i, { height: 2, width: 2, depth: 2, faceColors: colors_z});
+	// 	// 	box.position.x = box_x;
+	// 	// 	box.position.z = box_z;
+	// 	// 	box.position.y = box_y;
+			
+	// 	// 	box_x -= 2;
+	// 	// 	box_z -= 2*0.565;			
+	// 	// 	box_y -= 0.25;			
+	// 	// }
+
+	// 	// for(var i =0; i<1500; i++)
+	// 	// {
+
+	// 	// 	var box = BABYLON.MeshBuilder.CreateBox("landing_box " + i, { height: 2, width: 2, depth: 2, faceColors: colors_z});
+	// 	// 	box.position.x = box_x;
+	// 	// 	box.position.z = box_z;
+	// 	// 	box.position.y = box_y;
+			
+	// 	// 	box_x -= 20;
+	// 	// 	box_z -= 20*0.57;
+
+	// 	// 	if(box_x > 2400 && box_y >= 10)
+	// 	// 	{
+	// 	// 		box_y -= 20*0.25 
+	// 	// 	}
+	// 	// 	else
+	// 	// 	{
+	// 	// 		box_y = 5 
+	// 	// 	}
+	// 	// }
+
+
+	// }
+
+	</script>
+</body>
+
+</html>

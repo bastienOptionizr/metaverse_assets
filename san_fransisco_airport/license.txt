@@ -1,0 +1,8 @@
+Model Information:
+* title:	San Francisco International Airport (SFO)
+* source:	https://sketchfab.com/3d-models/san-francisco-international-airport-sfo-34a84e6639274e19af7a49957cb4dad1
+* author:	Razvan Badea (https://sketchfab.com/rbadea)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works
